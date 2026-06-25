@@ -33,10 +33,10 @@ PUBLIC_RELAY_ORIGIN=https://motion-lab-relay.onrender.com
 MOTION_ALLOWED_ORIGINS=https://hhaider3.github.io,https://localhost:5174,http://localhost:5174
 ```
 
-Then build/deploy the GitHub Pages frontend with the same relay URL:
+Then build the GitHub Pages frontend with the same relay URL and publish the generated `dist/` directory:
 
 ```bash
-VITE_MOTION_RELAY_URL=https://motion-lab-relay.onrender.com npm run deploy
+VITE_MOTION_RELAY_URL=https://motion-lab-relay.onrender.com npm run build
 ```
 
 You can also test without rebuilding by opening the hosted site with:
