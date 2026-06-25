@@ -1,5 +1,7 @@
 # Motion Lab
 
+Live on my website: visit https://hhaider3.github.io/ and open the Motion Lab desktop icon, or use Projects > Motion Labs > Live Demo.
+
 Standalone React + Three.js motion sensor lab forked from the portfolio project.
 
 Motion Lab pairs a phone with a desktop browser session, streams `DeviceMotion` and `DeviceOrientation` packets through a small relay, and maps the phone movement into a live 3D sword scene.
