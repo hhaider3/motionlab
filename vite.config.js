@@ -126,6 +126,33 @@ const motionRelayPlugin = () => ({
       };
     };
 
+    const sendFeedback = (sessionId, feedback) => {
+      const session = getSession(sessionId);
+      let delivered = 0;
+
+      session.publishers.forEach((socket) => {
+        if (socket.destroyed || !socket.writable) {
+          session.publishers.delete(socket);
+          return;
+        }
+
+        try {
+          writeWebSocketJson(socket, {
+            type: 'feedback',
+            feedback: feedback.feedback || 'hit',
+            intensity: Number(feedback.intensity) || 0,
+            color: feedback.color,
+            sentAt: Date.now(),
+          });
+          delivered += 1;
+        } catch {
+          session.publishers.delete(socket);
+        }
+      });
+
+      return delivered;
+    };
+
     const rejectUpgrade = (socket, statusCode, message) => {
       socket.write(`HTTP/1.1 ${statusCode} ${message}\r\nConnection: close\r\n\r\n`);
       socket.destroy();
@@ -271,6 +298,28 @@ const motionRelayPlugin = () => ({
         sendJson(res, 200, { ok: true, listeners: result.listeners });
       } catch (error) {
         sendJson(res, 400, { error: error.message || 'Invalid sensor packet' });
+      }
+    });
+
+    server.middlewares.use('/api/motion/feedback', async (req, res) => {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' });
+        return;
+      }
+
+      try {
+        const feedback = await readJsonBody(req);
+        const sessionId = feedback.sessionId || feedback.s;
+
+        if (!sessionId) {
+          sendJson(res, 400, { error: 'Missing session id' });
+          return;
+        }
+
+        const delivered = sendFeedback(sessionId, feedback);
+        sendJson(res, 200, { ok: true, delivered });
+      } catch (error) {
+        sendJson(res, 400, { error: error.message || 'Invalid feedback payload' });
       }
     });
   },

@@ -20,6 +20,7 @@ http://localhost:8787
 - `GET /api/motion/config`
 - `GET /api/motion/events?s=<session>` for Server-Sent Events
 - `POST /api/motion/publish` for phone sensor packets
+- `POST /api/motion/feedback` for desktop-to-phone hit feedback
 
 ## Deploy
 

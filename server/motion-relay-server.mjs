@@ -123,6 +123,33 @@ const publishPacket = (sessionId, packet) => {
   };
 };
 
+const sendFeedback = (sessionId, feedback) => {
+  const session = getSession(sessionId);
+  let delivered = 0;
+
+  session.publishers.forEach((socket) => {
+    if (socket.destroyed || !socket.writable) {
+      session.publishers.delete(socket);
+      return;
+    }
+
+    try {
+      writeWebSocketJson(socket, {
+        type: 'feedback',
+        feedback: feedback.feedback || 'hit',
+        intensity: Number(feedback.intensity) || 0,
+        color: feedback.color,
+        sentAt: Date.now(),
+      });
+      delivered += 1;
+    } catch {
+      session.publishers.delete(socket);
+    }
+  });
+
+  return delivered;
+};
+
 const handleConfig = (req, res) => {
   if (req.method !== 'GET') {
     sendJson(req, res, 405, { error: 'Method not allowed' });
@@ -196,6 +223,28 @@ const handlePublish = async (req, res) => {
     sendJson(req, res, 200, { ok: true, listeners: result.listeners });
   } catch (error) {
     sendJson(req, res, 400, { error: error.message || 'Invalid sensor packet' });
+  }
+};
+
+const handleFeedback = async (req, res) => {
+  if (req.method !== 'POST') {
+    sendJson(req, res, 405, { error: 'Method not allowed' });
+    return;
+  }
+
+  try {
+    const feedback = await readJsonBody(req);
+    const sessionId = feedback.sessionId || feedback.s;
+
+    if (!sessionId) {
+      sendJson(req, res, 400, { error: 'Missing session id' });
+      return;
+    }
+
+    const delivered = sendFeedback(sessionId, feedback);
+    sendJson(req, res, 200, { ok: true, delivered });
+  } catch (error) {
+    sendJson(req, res, 400, { error: error.message || 'Invalid feedback payload' });
   }
 };
 
@@ -318,6 +367,11 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname === '/api/motion/publish') {
     handlePublish(req, res);
+    return;
+  }
+
+  if (url.pathname === '/api/motion/feedback') {
+    handleFeedback(req, res);
     return;
   }
 
