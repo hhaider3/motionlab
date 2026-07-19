@@ -1,3 +1,5 @@
+![Motion Lab header image](public/readme-header.png)
+
 # Motion Lab
 
 Turn a phone into a real-time motion controller for a browser-based 3D sword game.
